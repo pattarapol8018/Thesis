@@ -8,22 +8,20 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import csv
 import random
-import re  # ← เพิ่มเพื่อช่วยทำความสะอาดข้อความเล็กน้อย
+import re  
 
-
-# ---------- CONFIG ----------
 
 BASE_URL = "https://www.checkraka.com/car/mitsubishi/attrage/"
 OUTPUT_FILE = "mitsubishi_attrage.csv"
 
-# เดิมเป็น ["Model Name", "Price", "Details"] → เปลี่ยนเป็นคอลัมน์สเปกตามที่ต้องการ
+
 HEADERS = ["Model Name", "engine_cc", "horsepower_hp", "gears", "fuel_type", "engine", "brakes", "drive"]
 
 MIN_DELAY = 2.5
 MAX_DELAY = 4.5
-# ----------------------------
 
-# ---------- SETUP ----------
+
+
 options = Options()
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--disable-gpu")
@@ -42,7 +40,6 @@ def get_model_links_and_info():
     driver.get(BASE_URL)
     human_delay()
 
-    #ดูรุ่นย่อยทั้งหมด
     try:
         load_more_btn = wait.until(EC.element_to_be_clickable((By.ID, "btn-load-more")))
         driver.execute_script("arguments[0].scrollIntoView(true);", load_more_btn)
@@ -128,8 +125,6 @@ def scrape_details(url):
         print(f"ดึงสเปคล้มเหลว {url}: {e}")
         return {"engine_cc": "", "horsepower_hp": "", "gears": "", "fuel_type": ""}
 
-
-# MAIN 
 try:
     model_data = get_model_links_and_info()
     for i, item in enumerate(model_data, 1):
