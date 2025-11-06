@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>AI รถยนต์แนะนำ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+   
+    :root{
+      --brand:#007bff;         
+      --brand-dark:#0668d0;    
+      --bg:#f5f7fb;            
+      --panel:#ffffff;         
+      --border:#e5e7eb;        
+      --muted:#64748b;         
+      --text:#111827;          
+      --shadow:0 6px 18px rgba(0,0,0,.08);
+      --radius:12px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background:
+        linear-gradient(rgba(48, 48, 48, 0.8), rgba(0, 0, 0, 0.8)),
+        url("{{ url_for('static', filename='BG.png') }}");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      color: var(--text);
+    }
+    header {
+      background: var(--brand);
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 2px 10px rgba(0,0,0,.12);
+    }
+    header .spacer { flex: 1; }
+
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      overflow-y: auto;
+      gap: 10px;
+    }
+
+    .message {
+      position: relative;
+      margin-bottom: 6px;
+      max-width: 90%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      font-size: 15px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .user {
+      background: linear-gradient(180deg, var(--brand), #1d73ea);
+      color: #fff;
+      margin-left: auto;
+      border-color: rgba(255,255,255,.25);
+
+      /* ✅ fit content แต่ไม่พัง border-radius */
+      display: inline-block;
+      max-width: 75%;
+      white-space: normal;
+    }
+    .bot  { 
+      background: #ffffff; 
+      border-color: var(--border);
+      margin-right: auto; 
+    }
+
+    .user::after{
+      content:""; 
+      position:absolute;
+      bottom:-1px;
+      right:10px;
+      width:12px;
+      height:12px;
+      transform:rotate(45deg);
+      background:#1d73ea;
+    }
+
+
+    .bot::after{
+      display:none !important;
+      content:none !important;
+    }
+
+    .bot::after{ left:10px; 
+      background:#fff; 
+      border-left:1px solid var(--border); 
+      border-bottom:1px solid var(--border); }
+
+    .user::after{ right:10px; background:#1d73ea; }
+    .with-avatar{ padding-left:40px }
+    .with-avatar::before{
+      content:""; position:absolute; left:-2px; bottom:0; width:28px; height:28px; border-radius:999px;
+      background: radial-gradient(80% 80% at 35% 30%, #9ed0ff, #2b74ff);
+      border: 1px solid rgba(0,0,0,.06);
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+    }
+    .user.with-avatar::before{ left:auto; right:-2px; background:linear-gradient(160deg,#22d3ee,#0ea5e9); }
+    .message.user::before,
+    .message.user::after {
+      display: none !important;
+      content: none !important;
+}
+    .input-box {
+      display: flex;
+      padding: 12px;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      gap: 10px;
+      position: sticky; bottom: 0; z-index: 10;
+    }
+    .input-box input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid #cfd8dc;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      background:#fff;
+    }
+    .input-box input:focus{ box-shadow:0 0 0 3px rgba(0,123,255,.15) }
+    .input-box button {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .input-box button:hover { background: var(--brand-dark); }
+    .typing{ display:inline-flex; align-items:center; gap:6px }
+    .dot{ width:7px; height:7px; border-radius:999px; background:#9aa6b2; opacity:.6; animation:blink 1.2s infinite }
+    .dot:nth-child(2){ animation-delay:.15s }
+    .dot:nth-child(3){ animation-delay:.3s }
+    @keyframes blink{ 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+
+    .car-wrapper { margin-top: 6px; }
+    .car-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin: 10px 0 14px;
+      max-width: 880px;
+      box-shadow: var(--shadow);
+    }
+    .car-card h4 { margin: 2px 0 8px; font-size:16px }
+    .car-meta { font-size: 13px; color: #334155; }
+    .car-explain { 
+      margin-top: 8px; color: #0b5ed7; background: #f0f6ff; 
+      border-left: 4px solid var(--brand); padding: 8px 10px; border-radius: 8px;
+    }
+
+    
+    .quick { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 2px }
+    .chip { background:#fff; border:1px solid #cfd8dc; color:#0b4a87; padding:6px 10px; border-radius:999px; font-size:13px; cursor:pointer }
+    .chip:hover { background:#f3f7fb }
+  </style>
+</head>
+<body>
+  <header>
+    ขอต้อนรับเข้าสู่ ระบบแนะนำรถยนต์ โดยใช้ AI ครับ
+    <div class="spacer" ></div>
+  </header>
+  <div class="chat-container" id="chat"></div>
+  <div class="input-box">
+    <input type="text" id="userInput" placeholder="พิมพ์ข้อความคุยกับ AI...">
+    <button id="btnSend">ส่ง</button>
+  </div>
+
+<script>
+const chatContainer = document.getElementById("chat");
+const inputEl       = document.getElementById("userInput");
+const sendBtn       = document.getElementById("btnSend");
+
+function appendMessage(text, sender) {
+  const msg = document.createElement("div");
+  msg.className = `message ${sender} with-avatar`;
+  msg.textContent = text;
+  chatContainer.appendChild(msg);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function typingRow(){
+  const msg = document.createElement('div');
+  msg.className = 'message bot with-avatar';
+  msg.innerHTML = `<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
+  chatContainer.appendChild(msg);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  return { stop(){ msg.remove(); } };
+}
+
+function renderResults(results) {
+  if (!Array.isArray(results) || results.length === 0) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "car-wrapper";
+
+  results.forEach((car, idx) => {
+    const priceTxt = (typeof car.price === "number")
+      ? car.price.toLocaleString()
+      : (car.price ?? "");
+
+    const card = document.createElement("div");
+    card.className = "car-card";
+    card.innerHTML = `
+      <h4>${car.rank ? car.rank + '. ' : ''}${car.name || ''}</h4>
+      <div class="car-meta">
+        <div><b>ราคา:</b> ${priceTxt ? priceTxt + " บาท" : "—"}</div>
+        <div><b>เครื่องยนต์:</b> ${car.engine_text || '—'} &nbsp;|&nbsp; <b>แรงม้า:</b> ${car.hp_text || '—'}</div>
+        <div><b>ปี:</b> ${car.year || "—"} &nbsp;|&nbsp; <b>รุ่นย่อย:</b> ${car.series || "—"}</div>
+        <div><b>เชื้อเพลิง:</b> ${car.fuel_text || '—'} &nbsp;|&nbsp; <b>เกียร์:</b> ${car.gears_text || '—'}</div>
+        <div><b>ระบบขับเคลื่อน:</b> ${car.drive_text || '—'} &nbsp;|&nbsp; <b>เบรก:</b> ${car.brakes_text || '—'}</div>
+      </div>
+      ${car.description ? `<div style="margin-top:6px">${car.description}</div>` : ''}
+      ${car.ai_explanation ? `<div class="car-explain"><b>ทำไมผมถึงแนะนำรถนี้: </b> ${car.ai_explanation}</div>` : ''}
+    `;
+    wrap.appendChild(card);
+  });
+
+  chatContainer.appendChild(wrap);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  setTimeout(() => chatContainer.scrollTop = chatContainer.scrollHeight, 100);
+}
+
+
+async function sendMessage(textOverride = null, opts = {}) {
+  const text = (textOverride ?? inputEl.value).trim();
+  if (!text) return;
+
+  if (!opts.silent) appendMessage(text, "user");
+
+  inputEl.value = "";
+  sendBtn.disabled = true;
+
+  const typing = typingRow();
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, ...(opts.reset ? {reset: true} : {}) })
+    });
+
+    const data = await res.json();
+    typing.stop();
+
+    
+    appendMessage(data?.reply || "ขออภัย ระบบไม่สามารถตอบได้ในขณะนี้", "bot");
+    if (data?.mode === "intro" && data?.next) {
+      setTimeout(() => appendMessage(data.next, "bot"), 800);
+    }
+
+    
+    if (data?.mode === "ask" || data?.mode === "followup") return;
+
+    
+    if (Array.isArray(data?.results) && data.results.length > 0) {
+      renderResults(data.results);
+    }
+  } catch (e) {
+    console.error(e);
+    typing.stop();
+    appendMessage("เกิดข้อผิดพลาดในการติดต่อเซิร์ฟเวอร์", "bot");
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+
+sendBtn.addEventListener('click', () => sendMessage());
+inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+document.addEventListener('DOMContentLoaded', () => {
+  sendMessage("เริ่มใหม่", { reset: true, silent: true });
+});
+</script>
+</body>
+</html>
